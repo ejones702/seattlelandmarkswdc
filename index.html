@@ -1,0 +1,81 @@
+<html>
+
+<head>
+    <title>City of Seattle Features</title>
+    <meta http-equiv="Cache-Control" content="no-store" />
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js" type="text/javascript"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" crossorigin="anonymous"></script>
+
+    <script src="https://connectors.tableau.com/libs/tableauwdc-2.0.latest.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        
+(function () {
+    // Initiates the WDC process by creating a connector object
+    var myConnector = tableau.makeConnector();
+
+    // Creates the schema of the table and identifies which JSON features will go where in the table
+    myConnector.getSchema = function (schemaCallback) {
+    var cols = [
+        { id : "address", alias : "address", dataType : tableau.dataTypeEnum.string },
+        { id : "city_feature", alias : "city feature", dataType : tableau.dataTypeEnum.string },
+        { id : "common_name", alias : "common name", dataType : tableau.dataTypeEnum.string },
+        { id : "latitude", alias : "latitude", columnRole: "dimension", dataType : tableau.dataTypeEnum.float },
+        { id : "longitude", alias : "longitude",columnRole: "dimension", dataType : tableau.dataTypeEnum.float }
+    ];
+    // Creates the Table where the data will be stored
+    var tableInfo = {
+        id : "seattleFeatures",
+        alias : "Points of Interest in Seattle",
+        columns : cols
+    };
+
+    schemaCallback([tableInfo]);
+};
+    // Gets the JSON document from the target URL and feeds it into the iterator function
+    myConnector.getData = function(table, doneCallback) {
+    $.getJSON("https://data.seattle.gov/resource/3c4b-gdxv.json", function(resp) {
+        var feat = resp,
+            tableData = [];
+
+        // Iterate over the JSON object
+        for (var i = 0, len = feat.length; i < len; i++) {
+            tableData.push({
+                "address": feat[i].address,
+                "city_feature": feat[i].city_feature,
+                "common_name": feat[i].common_name,
+                "latitude": feat[i].latitude,
+                "longitude": feat[i].longitude
+            });
+        }
+
+        table.appendRows(tableData);
+        doneCallback();
+    });
+};
+    // Enables the connector to be used by registering it
+    tableau.registerConnector(myConnector);
+    // Event listener that fires off the connection when the button is pushed
+    $(document).ready(function () {
+    $("#submitButton").click(function () {
+        tableau.connectionName = "Seattle Features";
+        tableau.submit();
+    });
+});
+})();
+
+    </script>
+</head>
+
+<body>
+    <div class="container container-table">
+        <div class="row vertical-center-row">
+            <div class="text-center col-md-4 col-md-offset-4">
+                <button type="button" id="submitButton" class="btn btn-success" style="margin: 10px;">Get City Data!</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
